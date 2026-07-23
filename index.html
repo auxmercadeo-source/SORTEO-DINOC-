@@ -2,6 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5, viewport-fit=cover">
 <title>Sorteo Moto Eléctrica — DINOC</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
@@ -21,7 +22,7 @@
       radial-gradient(circle at 50% 0%, var(--navy-light), var(--navy) 45%, var(--navy-deep) 100%);
     font-family:'Inter', Arial, sans-serif;
     color:var(--white);
-    overflow:hidden;
+    overflow-x:hidden;
   }
 
   /* Floating ambient orbs */
@@ -43,7 +44,7 @@
 
   .wrap{
     position:relative; z-index:2;
-    height:100vh; width:100vw;
+    min-height:100vh; width:100vw;
     display:flex; flex-direction:column; align-items:center; justify-content:center;
     text-align:center; padding:20px;
   }
@@ -132,19 +133,46 @@
   }
   .winner-label{
     display:none;
-    font-size:13px; letter-spacing:4px; color:var(--gold);
+    font-size:14px; letter-spacing:5px; color:var(--gold);
     margin-bottom:12px; font-weight:700; text-transform:uppercase;
   }
-  .winner .winner-label{ display:block; }
+  .winner .winner-label{ display:block; animation:labelGlow 1.3s ease-in-out infinite; }
+  @keyframes labelGlow{
+    0%,100%{ text-shadow:0 0 8px rgba(232,194,122,.5); }
+    50%{ text-shadow:0 0 26px rgba(232,194,122,1), 0 0 42px rgba(225,29,46,.6); }
+  }
   .winner .factura{ color:var(--red-glow); text-shadow:0 0 30px rgba(255,71,87,.6); }
   .winner .cliente{ color:var(--gold); font-weight:600; }
-  .winner{ animation:pop .55s cubic-bezier(.34,1.56,.64,1); border-color:rgba(225,29,46,.5); }
-  .winner::before{
-    content:''; position:absolute; inset:-2px; border-radius:16px;
-    box-shadow:0 0 40px 4px rgba(225,29,46,.35);
-    pointer-events:none;
+  .winner{
+    border-color:rgba(225,29,46,.5);
+    animation:
+      pop .55s cubic-bezier(.34,1.56,.64,1),
+      winnerPulse 1.7s ease-in-out infinite .55s;
   }
-  @keyframes pop{ 0%{transform:scale(.82);} 55%{transform:scale(1.05);} 100%{transform:scale(1);} }
+  @keyframes pop{ 0%{transform:scale(.82) rotate(-1.5deg);} 55%{transform:scale(1.06) rotate(1deg);} 100%{transform:scale(1) rotate(0);} }
+  @keyframes winnerPulse{
+    0%,100%{ box-shadow:0 0 24px 2px rgba(225,29,46,.35), inset 0 0 20px rgba(232,194,122,.04); }
+    50%{ box-shadow:0 0 58px 12px rgba(225,29,46,.65), inset 0 0 34px rgba(232,194,122,.12); }
+  }
+
+  .rays{
+    position:absolute; inset:-70%; z-index:0; opacity:0; pointer-events:none;
+    background:conic-gradient(from 0deg,
+      transparent 0deg, rgba(232,194,122,.35) 6deg, transparent 14deg,
+      transparent 60deg, rgba(225,29,46,.28) 66deg, transparent 74deg,
+      transparent 140deg, rgba(232,194,122,.3) 146deg, transparent 154deg,
+      transparent 220deg, rgba(225,29,46,.25) 226deg, transparent 234deg,
+      transparent 300deg, rgba(232,194,122,.3) 306deg, transparent 314deg);
+  }
+  .winner .rays{ opacity:1; animation:spinRays 9s linear infinite; }
+  @keyframes spinRays{ to{ transform:rotate(360deg); } }
+
+  .flash{
+    position:fixed; inset:0; z-index:9; pointer-events:none; opacity:0;
+    background:radial-gradient(circle at 50% 38%, rgba(255,255,255,.9), rgba(225,29,46,.35) 45%, transparent 72%);
+  }
+  .flash.active{ animation:flashPulse .7s ease-out; }
+  @keyframes flashPulse{ 0%{opacity:0;} 14%{opacity:1;} 100%{opacity:0;} }
 
   .btn{
     margin-top:30px;
@@ -195,6 +223,32 @@
     display:inline-flex; gap:18px; margin-top:4px; font-size:12px; color:var(--muted);
   }
   .count-badge b{ color:var(--white); }
+
+  /* ---- Móvil ---- */
+  @media (max-width:600px){
+    .wrap{ padding:16px 14px; }
+    .brand img{ height:96px; margin-bottom:8px; }
+    h1{ font-size:24px; letter-spacing:1.5px; line-height:1.15; }
+    .sub{ font-size:12.5px; padding:0 6px; }
+    .divider{ margin:12px auto 14px; }
+    .count-badge{ font-size:11.5px; gap:14px; }
+    .stage{ width:100%; padding:22px 16px 20px; border-radius:16px; }
+    .card{ padding:22px 14px; min-height:96px; }
+    .factura{ font-size:21px; letter-spacing:.5px; word-break:break-word; }
+    .cliente{ font-size:13px; }
+    .winner-label{ font-size:11px; letter-spacing:2.5px; }
+    .btn{ padding:14px 32px; font-size:14px; margin-top:20px; width:100%; }
+    .meta{ font-size:10.5px; margin-top:14px; }
+    .toggle{ top:10px; right:10px; font-size:10.5px; padding:6px 10px; }
+    .list-panel{ width:88vw; padding:20px 16px; }
+    .orb1{ width:220px; height:220px; }
+    .orb2{ width:180px; height:180px; }
+    .orb3{ width:140px; height:140px; }
+  }
+  @media (max-height:680px){
+    html,body{ overflow-y:auto; }
+    .wrap{ padding-top:20px; padding-bottom:20px; }
+  }
 </style>
 </head>
 <body>
@@ -203,6 +257,7 @@
 <div class="orb orb3"></div>
 <div class="grid-overlay"></div>
 <canvas id="confetti"></canvas>
+<div class="flash" id="flash"></div>
 
 <div class="wrap">
   <div class="brand">
@@ -215,7 +270,8 @@
 
   <div class="stage">
     <div class="card" id="card">
-      <div class="winner-label">Ganador</div>
+      <div class="rays"></div>
+      <div class="winner-label">🏆 Ganador 🏆</div>
       <div class="factura" id="factura">Presiona "Iniciar Sorteo"</div>
       <div class="cliente" id="cliente"></div>
     </div>
@@ -321,10 +377,41 @@ function secureRandomIndex(max){
 }
 
 let drawing = false;
+let audioCtx = null;
+
+function unlockAudio(){
+  try{
+    audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+    if(audioCtx.state === 'suspended'){ audioCtx.resume(); }
+  }catch(e){ /* audio no disponible */ }
+}
+
+function playFanfare(){
+  if(!audioCtx) return;
+  try{
+    const notes = [523.25, 659.25, 783.99, 1046.5, 1318.5];
+    let t = audioCtx.currentTime + 0.02;
+    notes.forEach((freq, i)=>{
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.value = freq;
+      const dur = i === notes.length - 1 ? 0.55 : 0.16;
+      gain.gain.setValueAtTime(0.0001, t);
+      gain.gain.exponentialRampToValueAtTime(0.28, t + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      osc.connect(gain).connect(audioCtx.destination);
+      osc.start(t);
+      osc.stop(t + dur + 0.02);
+      t += 0.14;
+    });
+  }catch(e){ /* silencioso si falla */ }
+}
 
 function startDraw(){
   if(drawing) return;
   drawing = true;
+  unlockAudio();
   const btn = document.getElementById('btn');
   const card = document.getElementById('card');
   const facturaEl = document.getElementById('factura');
@@ -356,13 +443,28 @@ function startDraw(){
     } else {
       card.classList.remove('spinning');
       card.classList.add('winner');
-      launchConfetti();
+      celebrateWinner();
       btn.disabled = false;
       btn.textContent = "Repetir Sorteo";
       drawing = false;
     }
   }
   tick();
+}
+
+function celebrateWinner(){
+  const flash = document.getElementById('flash');
+  flash.classList.add('active');
+  setTimeout(()=>flash.classList.remove('active'), 700);
+
+  playFanfare();
+
+  spawnConfettiBurst(0.5, 0, 190, 0.32);
+  setTimeout(()=>spawnConfettiBurst(0.04, 6.5, 100, 0.85), 220);
+  setTimeout(()=>spawnConfettiBurst(0.96, -6.5, 100, 0.85), 220);
+  setTimeout(()=>spawnConfettiBurst(0.5, 0, 90, 0.32), 900);
+
+  fireworksShow();
 }
 
 const canvas = document.getElementById('confetti');
@@ -372,22 +474,54 @@ resize();
 window.addEventListener('resize', resize);
 
 let particles = [];
-function launchConfetti(){
-  particles = [];
-  const colors = ['#e11d2e','#ff4757','#e8c27a','#f4f6fb','#1e3a8a'];
-  for(let i=0;i<180;i++){
+const CONFETTI_COLORS = ['#e11d2e','#ff4757','#e8c27a','#f4f6fb','#1e3a8a','#ffd166'];
+
+function spawnConfettiBurst(originXRatio, biasVX, count, originYRatio){
+  for(let i=0;i<count;i++){
     particles.push({
-      x: canvas.width/2 + (Math.random()-0.5)*220,
-      y: canvas.height*0.32,
-      vx: (Math.random()-0.5)*8,
-      vy: Math.random()*-6.5 - 2,
+      type:'confetti',
+      x: canvas.width*originXRatio + (Math.random()-0.5)*80,
+      y: canvas.height*originYRatio,
+      vx: biasVX + (Math.random()-0.5)*8,
+      vy: Math.random()*-7 - 2,
       g: 0.18 + Math.random()*0.08,
       size: 4 + Math.random()*5,
-      color: colors[Math.floor(Math.random()*colors.length)],
+      color: CONFETTI_COLORS[Math.floor(Math.random()*CONFETTI_COLORS.length)],
       rot: Math.random()*360,
       vr: (Math.random()-0.5)*10,
-      life: 150 + Math.random()*40
+      life: 150 + Math.random()*50
     });
+  }
+}
+
+function fireworkBurst(x, y){
+  const colors = ['#e11d2e','#ff4757','#e8c27a','#ffd166','#f4f6fb'];
+  const count = 46;
+  for(let i=0;i<count;i++){
+    const angle = (Math.PI*2*i)/count + Math.random()*0.25;
+    const speed = 2.4 + Math.random()*3.4;
+    particles.push({
+      type:'firework',
+      x, y,
+      vx: Math.cos(angle)*speed,
+      vy: Math.sin(angle)*speed,
+      g: 0.05,
+      size: 2.5 + Math.random()*2.5,
+      color: colors[Math.floor(Math.random()*colors.length)],
+      life: 55 + Math.random()*20,
+      maxLife: 78
+    });
+  }
+}
+
+function fireworksShow(){
+  const bursts = 5;
+  for(let i=0;i<bursts;i++){
+    setTimeout(()=>{
+      const x = canvas.width*(0.15 + Math.random()*0.7);
+      const y = canvas.height*(0.15 + Math.random()*0.32);
+      fireworkBurst(x,y);
+    }, 300 + i*420);
   }
 }
 
@@ -397,16 +531,30 @@ function animate(){
     p.vy += p.g;
     p.x += p.vx;
     p.y += p.vy;
-    p.rot += p.vr;
     p.life--;
-    ctx.save();
-    ctx.translate(p.x,p.y);
-    ctx.rotate(p.rot*Math.PI/180);
-    ctx.fillStyle = p.color;
-    ctx.fillRect(-p.size/2,-p.size/2,p.size,p.size);
-    ctx.restore();
+
+    if(p.type === 'firework'){
+      ctx.save();
+      ctx.globalAlpha = Math.max(p.life / p.maxLife, 0);
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.size, 0, Math.PI*2);
+      ctx.fillStyle = p.color;
+      ctx.fill();
+      ctx.restore();
+    } else {
+      p.rot += p.vr;
+      ctx.save();
+      ctx.translate(p.x,p.y);
+      ctx.rotate(p.rot*Math.PI/180);
+      ctx.fillStyle = p.color;
+      ctx.fillRect(-p.size/2,-p.size/2,p.size,p.size);
+      ctx.restore();
+    }
   });
-  particles = particles.filter(p=>p.life>0 && p.y < canvas.height + 50);
+  particles = particles.filter(p=>{
+    if(p.type === 'firework') return p.life > 0;
+    return p.life > 0 && p.y < canvas.height + 50;
+  });
   requestAnimationFrame(animate);
 }
 animate();
