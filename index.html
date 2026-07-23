@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Sorteo Moto Eléctrica — DINOC</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --navy-deep:#060b16; --navy:#0d1730; --navy-light:#16223f;
+    --red:#e11d2e; --red-dark:#8c0f1c; --red-glow:#ff4757;
+    --gold:#e8c27a;
+    --white:#f4f6fb; --muted:#8b96ad;
+  }
+  *{box-sizing:border-box;}
+  html,body{
+    margin:0; height:100%; width:100%;
+    background:
+      radial-gradient(circle at 15% 10%, rgba(225,29,46,0.10), transparent 40%),
+      radial-gradient(circle at 85% 85%, rgba(225,29,46,0.08), transparent 45%),
+      radial-gradient(circle at 50% 0%, var(--navy-light), var(--navy) 45%, var(--navy-deep) 100%);
+    font-family:'Inter', Arial, sans-serif;
+    color:var(--white);
+    overflow:hidden;
+  }
+
+  /* Floating ambient orbs */
+  .orb{ position:fixed; border-radius:50%; filter:blur(60px); opacity:.35; pointer-events:none; z-index:0; }
+  .orb1{ width:380px; height:380px; background:var(--red); top:-120px; left:-100px; animation:float1 16s ease-in-out infinite; }
+  .orb2{ width:300px; height:300px; background:#1e3a8a; bottom:-100px; right:-80px; animation:float2 20s ease-in-out infinite; }
+  .orb3{ width:220px; height:220px; background:var(--red-glow); bottom:20%; left:8%; opacity:.18; animation:float1 22s ease-in-out infinite reverse; }
+  @keyframes float1{ 0%,100%{transform:translate(0,0);} 50%{transform:translate(40px,60px);} }
+  @keyframes float2{ 0%,100%{transform:translate(0,0);} 50%{transform:translate(-50px,-40px);} }
+
+  /* subtle grid texture */
+  .grid-overlay{
+    position:fixed; inset:0; z-index:0; opacity:.05; pointer-events:none;
+    background-image:
+      linear-gradient(rgba(255,255,255,.6) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,.6) 1px, transparent 1px);
+    background-size:48px 48px;
+  }
+
+  .wrap{
+    position:relative; z-index:2;
+    height:100vh; width:100vw;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    text-align:center; padding:20px;
+  }
+
+  .brand{
+    display:flex; flex-direction:column; align-items:center; margin-bottom:18px;
+  }
+  .brand img{
+    height:clamp(120px,16vw,220px); margin-bottom:10px;
+    filter:drop-shadow(0 4px 18px rgba(225,29,46,0.35));
+  }
+  h1{
+    font-family:'Sora', sans-serif;
+    font-size:clamp(22px,3.6vw,42px);
+    font-weight:800;
+    letter-spacing:3px;
+    margin:0 0 6px 0;
+    background:linear-gradient(90deg, var(--white), var(--gold) 55%, var(--white));
+    -webkit-background-clip:text;
+    background-clip:text;
+    color:transparent;
+    text-transform:uppercase;
+  }
+  .sub{
+    font-size:clamp(12px,1.5vw,16px);
+    color:var(--muted);
+    letter-spacing:1px;
+    margin-bottom:8px;
+  }
+  .divider{
+    width:70px; height:3px; margin:14px auto 26px;
+    background:linear-gradient(90deg, transparent, var(--red), transparent);
+    border-radius:3px;
+  }
+
+  .stage{
+    width:min(660px,92vw);
+    position:relative;
+    background:linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02));
+    border:1px solid rgba(225,29,46,0.25);
+    border-radius:22px;
+    padding:38px 28px 32px;
+    box-shadow:
+      0 20px 60px rgba(0,0,0,.5),
+      inset 0 1px 0 rgba(255,255,255,.06);
+    backdrop-filter:blur(10px);
+  }
+  .stage::before{
+    content:''; position:absolute; inset:-1px; border-radius:22px; padding:1px;
+    background:linear-gradient(135deg, rgba(225,29,46,.6), transparent 30%, transparent 70%, rgba(232,194,122,.4));
+    -webkit-mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite:xor; mask-composite:exclude;
+    pointer-events:none;
+  }
+
+  .card{
+    position:relative; overflow:hidden;
+    background:linear-gradient(145deg,#0f1830,#080d1c);
+    border-radius:16px;
+    padding:30px 20px;
+    min-height:130px;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    border:1px solid rgba(255,255,255,0.06);
+  }
+  .card::after{
+    content:''; position:absolute; top:0; left:-60%; width:50%; height:100%;
+    background:linear-gradient(120deg, transparent, rgba(255,255,255,0.06), transparent);
+    transform:skewX(-20deg);
+  }
+  .card.spinning::after{ animation:shimmer 0.9s linear infinite; }
+  @keyframes shimmer{ 0%{left:-60%;} 100%{left:120%;} }
+
+  .factura{
+    font-family:'Sora', sans-serif;
+    font-size:clamp(24px,3.6vw,36px);
+    font-weight:800;
+    letter-spacing:1px;
+    color:var(--white);
+  }
+  .cliente{
+    font-family:'Inter', sans-serif;
+    font-size:clamp(14px,2vw,19px);
+    color:var(--muted);
+    margin-top:10px;
+    min-height:1.4em;
+  }
+  .winner-label{
+    display:none;
+    font-size:13px; letter-spacing:4px; color:var(--gold);
+    margin-bottom:12px; font-weight:700; text-transform:uppercase;
+  }
+  .winner .winner-label{ display:block; }
+  .winner .factura{ color:var(--red-glow); text-shadow:0 0 30px rgba(255,71,87,.6); }
+  .winner .cliente{ color:var(--gold); font-weight:600; }
+  .winner{ animation:pop .55s cubic-bezier(.34,1.56,.64,1); border-color:rgba(225,29,46,.5); }
+  .winner::before{
+    content:''; position:absolute; inset:-2px; border-radius:16px;
+    box-shadow:0 0 40px 4px rgba(225,29,46,.35);
+    pointer-events:none;
+  }
+  @keyframes pop{ 0%{transform:scale(.82);} 55%{transform:scale(1.05);} 100%{transform:scale(1);} }
+
+  .btn{
+    margin-top:30px;
+    background:linear-gradient(135deg, var(--red), var(--red-dark));
+    border:1px solid rgba(255,255,255,.12);
+    color:var(--white); font-weight:700;
+    font-family:'Sora', sans-serif;
+    font-size:clamp(14px,1.8vw,18px);
+    letter-spacing:1px;
+    padding:16px 44px; border-radius:40px; cursor:pointer;
+    box-shadow:0 10px 30px rgba(225,29,46,.35);
+    transition:transform .15s ease, box-shadow .15s ease;
+    text-transform:uppercase;
+    animation:pulse 2.4s ease-in-out infinite;
+  }
+  .btn:hover{ transform:translateY(-2px) scale(1.02); box-shadow:0 14px 36px rgba(225,29,46,.5); }
+  .btn:disabled{ opacity:.55; cursor:not-allowed; transform:none; animation:none; }
+  @keyframes pulse{ 0%,100%{ box-shadow:0 10px 30px rgba(225,29,46,.35);} 50%{ box-shadow:0 10px 40px rgba(225,29,46,.6);} }
+
+  .meta{
+    margin-top:20px; font-size:12px; color:#5f6b82; letter-spacing:.3px;
+  }
+
+  canvas#confetti{
+    position:fixed; inset:0; width:100%; height:100%; pointer-events:none; z-index:5;
+  }
+
+  .toggle{
+    position:fixed; top:22px; right:26px; font-size:12px; color:var(--muted);
+    cursor:pointer; letter-spacing:.5px; z-index:6;
+    border:1px solid rgba(255,255,255,.12); padding:8px 14px; border-radius:20px;
+    background:rgba(255,255,255,.03); transition:all .2s ease;
+  }
+  .toggle:hover{ color:var(--white); border-color:rgba(225,29,46,.5); }
+  .list-panel{
+    position:fixed; top:0; right:0; height:100vh; width:340px;
+    background:rgba(6,11,22,0.97); border-left:1px solid rgba(225,29,46,.2);
+    transform:translateX(100%); transition:transform .35s ease;
+    padding:26px 22px; overflow-y:auto; z-index:10; text-align:left;
+  }
+  .list-panel.open{ transform:translateX(0); }
+  .list-panel h3{ color:var(--red-glow); margin-top:0; font-family:'Sora',sans-serif; letter-spacing:1px; }
+  .list-panel table{ width:100%; border-collapse:collapse; font-size:12px; }
+  .list-panel td{ padding:5px 3px; border-bottom:1px solid rgba(255,255,255,.06); color:#c7d0dd; }
+  .list-panel td:first-child{ color:var(--red-glow); font-weight:700; white-space:nowrap; }
+
+  .count-badge{
+    display:inline-flex; gap:18px; margin-top:4px; font-size:12px; color:var(--muted);
+  }
+  .count-badge b{ color:var(--white); }
+</style>
+</head>
+<body>
+<div class="orb orb1"></div>
+<div class="orb orb2"></div>
+<div class="orb orb3"></div>
+<div class="grid-overlay"></div>
+<canvas id="confetti"></canvas>
+
+<div class="wrap">
+  <div class="brand">
+    <img src="https://res.cloudinary.com/vf6ihsi7/image/upload/v1784841180/LOGO-DINOC-IMPORTADORA-SAS_ju8dqt.png" alt="DINOC Importadora">
+    <h1>Sorteo Moto Eléctrica</h1>
+    <div class="sub">Participan con el número de factura de compra</div>
+    <div class="divider"></div>
+    <div class="count-badge"><span><b id="totalFacturas">70</b> facturas</span><span><b id="totalClientes">56</b> clientes</span></div>
+  </div>
+
+  <div class="stage">
+    <div class="card" id="card">
+      <div class="winner-label">Ganador</div>
+      <div class="factura" id="factura">Presiona "Iniciar Sorteo"</div>
+      <div class="cliente" id="cliente"></div>
+    </div>
+    <button class="btn" id="btn" onclick="startDraw()">Iniciar Sorteo</button>
+    <div class="meta">Aleatoriedad generada con crypto.getRandomValues del navegador — mismo estándar de seguridad que random.org</div>
+  </div>
+</div>
+
+<div class="toggle" onclick="document.getElementById('panel').classList.toggle('open')">Ver lista completa ▤</div>
+<div class="list-panel" id="panel">
+  <h3>Participantes</h3>
+  <table id="listTable"></table>
+</div>
+
+<script>
+const data = [
+["FIED-4365","ALBERTO ELIAS MIRANDA JARAMILLO"],
+["FIED-4078","ALEC MAFRED RODRIGUEZ LEON"],
+["FIED-4305","ALEC MAFRED RODRIGUEZ LEON"],
+["FIED-4137","ALEJANDRA ESMERALDA VALLEJO VILLAREAL"],
+["FIED-4077","ALEXANDER MIGUEL RODRIGUEZ BLANCO"],
+["FIED-4241","ANA JUAQUINA VILLANOVA URIBE"],
+["FIED-4319","AUTOCITY SERVICE"],
+["FIED-4096","AUTOLUJOS MAICAO"],
+["FIED-4413","AUTOLUJOS MAICAO"],
+["FIED-4070","CAMILO ANDRES URQUIJO AGUDELO"],
+["FIED-4330","CAMILO ANDRES URQUIJO AGUDELO"],
+["FIED-4188","CARLOS ALBERTO MONTES RODRIGUEZ"],
+["FIED-4408","CARLOS ARTURO BECERRA RAMIREZ"],
+["FIED-4150","CARMEN ALICIA SANTAELLA CHACON"],
+["FIED-4081","CENTRO AUTOMOTRIZ QUINTAL"],
+["FIED-4154","CENTRO AUTOMOTRIZ QUINTAL"],
+["FIED-4222","CENTRO AUTOMOTRIZ QUINTAL"],
+["FIED-4086","CENTRO DE LUBRICACION LUBRITAXIS SAS"],
+["FIED-4114","COMERCIALIZADORA DE RINES Y LLANTAS SAS"],
+["FIED-4128","COMERCIALIZADORA DISTRILLANTAS SAS"],
+["FIED-4314","DANIEL ORLANDO DIAZ SANTANA"],
+["FIED-4046","DAPA SOLUCIONES S.A.S"],
+["FIED-4196","DIEGO FERNANDO VARON CARRILLO"],
+["FIED-4244","ELKIN MANUEL SANCHEZ"],
+["FIED-4179","EUTIMIO CAMELO ROMERO"],
+["FIED-4098","FACUNDO CORREA HERNANDEZ"],
+["FIED-4243","GENIS EDMUNDO MESIAS POSSO"],
+["FIED-4203","GRANDES LLANTAS SAS"],
+["FIED-4117","GRUPO EMPRESARIAL IMPORTADORA PPAM S.A.S"],
+["FIED-4140","HAROLDO RAFAEL NOVOA AVENDANO"],
+["FIED-4148","JAIRO ENRIQUE VILLA LARA"],
+["FIED-4156","JAL DEALER AUTOPARTES Y ACCESORIOS SAS"],
+["FIED-4328","JAL DEALER AUTOPARTES Y ACCESORIOS SAS"],
+["FIED-4346","JAL DEALER AUTOPARTES Y ACCESORIOS SAS"],
+["FIED-4146","JUAN CAMILO LEON LOPEZ"],
+["FIED-4097","JUAN CARLOS FUENTES LOPEZ"],
+["FIED-4166","JUAN CARLOS FUENTES LOPEZ"],
+["FIED-4153","KEINER DAVID RODRIGUEZ FRAGOZO"],
+["FIED-4057","KIT TOYO"],
+["FIED-4068","LA CASA DEL RIN DE PASTO"],
+["FIED-4136","LA RUEDA LABOYANA"],
+["FIED-4084","LAZARO SAVEDRA PRADA"],
+["FIED-4069","LEIDY DIANA BOTINA VALLEJO"],
+["FIED-4322","LEIDY DIANA BOTINA VALLEJO"],
+["FIED-4193","LLANTAS Y RINES SERVITRIANA"],
+["FIED-4045","LUBRICENTRO ACOSTA"],
+["FIED-4122","LUIS ALBERTO RODRIGUEZ ORTIZ"],
+["FIED-4189","LUXUS CARTAGENA 4X4"],
+["FIED-4309","LUXUS CARTAGENA 4X4"],
+["FIED-4115","MARIO ALFREDO MARINO"],
+["FIED-4246","MONO LLANTAS PITALITO"],
+["FIED-4249","MONTALLANTAS Y PARQUEADERO EL TERMINAL DE PITALITO"],
+["FIED-4237","MULTISERVICIOS LA RUEDA SAS"],
+["FIED-4417","MUNDO DIGITAL A Y J"],
+["FIED-4350","ORION LUJOS Y SONIDOS S.A.S"],
+["FIED-4376","OSCAR ALBEIRO ZULUAGA GARCIA"],
+["FIED-4071","OSCAR FABIAN JIMENEZ CARDNA"],
+["FIED-4174","PEDRO CINTAS"],
+["FIED-4231","POLARIZADOS Y ACCESORIOS CALDERON"],
+["FIED-4053","SERVICENTRO LA ESTRELLA S.A.S"],
+["FIED-4227","SERVILLANTAS ASC"],
+["FIED-4277","SERVILLANTAS LA 20"],
+["FIED-4395","SERVILLANTAS LA 20"],
+["FIED-4108","TAX POBLADO SAS"],
+["FIED-4109","TAX POBLADO SAS"],
+["FIED-4177","UPEGUI LLANTAS Y RINES"],
+["FIED-4118","VIVIANA ASTRID MORENO GONZALEZ"],
+["FIED-4298","VIVIANA ASTRID MORENO GONZALEZ"],
+["FIED-4404","VIVIANA ASTRID MORENO GONZALEZ"],
+["FIED-4321","WILDER YESID ORTEGA PALACIOS"]
+];
+
+document.getElementById('totalFacturas').textContent = data.length;
+document.getElementById('totalClientes').textContent = new Set(data.map(d=>d[1])).size;
+
+const table = document.getElementById('listTable');
+data.forEach(([f,c])=>{
+  const tr = document.createElement('tr');
+  tr.innerHTML = `<td>${f}</td><td>${c}</td>`;
+  table.appendChild(tr);
+});
+
+function secureRandomIndex(max){
+  const arr = new Uint32Array(1);
+  crypto.getRandomValues(arr);
+  return arr[0] % max;
+}
+
+let drawing = false;
+
+function startDraw(){
+  if(drawing) return;
+  drawing = true;
+  const btn = document.getElementById('btn');
+  const card = document.getElementById('card');
+  const facturaEl = document.getElementById('factura');
+  const clienteEl = document.getElementById('cliente');
+  btn.disabled = true;
+  btn.textContent = "Sorteando...";
+  card.classList.remove('winner');
+  card.classList.add('spinning');
+
+  const winnerIndex = secureRandomIndex(data.length);
+  const totalSteps = 40;
+  let step = 0;
+
+  function tick(){
+    let idx;
+    if(step === totalSteps - 1){
+      idx = winnerIndex;
+    } else {
+      idx = secureRandomIndex(data.length);
+    }
+    facturaEl.textContent = data[idx][0];
+    clienteEl.textContent = data[idx][1];
+    step++;
+
+    if(step < totalSteps){
+      const progress = step / totalSteps;
+      const delay = 40 + Math.pow(progress, 3) * 420;
+      setTimeout(tick, delay);
+    } else {
+      card.classList.remove('spinning');
+      card.classList.add('winner');
+      launchConfetti();
+      btn.disabled = false;
+      btn.textContent = "Repetir Sorteo";
+      drawing = false;
+    }
+  }
+  tick();
+}
+
+const canvas = document.getElementById('confetti');
+const ctx = canvas.getContext('2d');
+function resize(){ canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+resize();
+window.addEventListener('resize', resize);
+
+let particles = [];
+function launchConfetti(){
+  particles = [];
+  const colors = ['#e11d2e','#ff4757','#e8c27a','#f4f6fb','#1e3a8a'];
+  for(let i=0;i<180;i++){
+    particles.push({
+      x: canvas.width/2 + (Math.random()-0.5)*220,
+      y: canvas.height*0.32,
+      vx: (Math.random()-0.5)*8,
+      vy: Math.random()*-6.5 - 2,
+      g: 0.18 + Math.random()*0.08,
+      size: 4 + Math.random()*5,
+      color: colors[Math.floor(Math.random()*colors.length)],
+      rot: Math.random()*360,
+      vr: (Math.random()-0.5)*10,
+      life: 150 + Math.random()*40
+    });
+  }
+}
+
+function animate(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  particles.forEach(p=>{
+    p.vy += p.g;
+    p.x += p.vx;
+    p.y += p.vy;
+    p.rot += p.vr;
+    p.life--;
+    ctx.save();
+    ctx.translate(p.x,p.y);
+    ctx.rotate(p.rot*Math.PI/180);
+    ctx.fillStyle = p.color;
+    ctx.fillRect(-p.size/2,-p.size/2,p.size,p.size);
+    ctx.restore();
+  });
+  particles = particles.filter(p=>p.life>0 && p.y < canvas.height + 50);
+  requestAnimationFrame(animate);
+}
+animate();
+</script>
+</body>
+</html>
