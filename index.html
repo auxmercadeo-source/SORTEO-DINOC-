@@ -241,9 +241,11 @@
     .meta{ font-size:10.5px; margin-top:14px; }
     .toggle{ top:10px; right:10px; font-size:10.5px; padding:6px 10px; }
     .list-panel{ width:88vw; padding:20px 16px; }
-    .orb1{ width:220px; height:220px; }
-    .orb2{ width:180px; height:180px; }
-    .orb3{ width:140px; height:140px; }
+    .orb1{ width:220px; height:220px; filter:blur(38px); }
+    .orb2{ width:180px; height:180px; filter:blur(38px); }
+    .orb3{ width:140px; height:140px; filter:blur(30px); }
+    .stage{ backdrop-filter:none; background:linear-gradient(180deg, rgba(20,28,50,0.55), rgba(10,15,28,0.5)); }
+    .rays{ inset:-40%; }
   }
   @media (max-height:680px){
     html,body{ overflow-y:auto; }
@@ -383,6 +385,16 @@ function unlockAudio(){
   try{
     audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
     if(audioCtx.state === 'suspended'){ audioCtx.resume(); }
+    // En iOS/Safari el audio solo queda "desbloqueado" si el primer sonido
+    // se dispara de forma sincrona dentro del mismo toque/click. Reproducimos
+    // un tono casi inaudible ahora mismo para habilitar el audio del resto de la pagina.
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    gain.gain.setValueAtTime(0.0001, audioCtx.currentTime);
+    osc.frequency.value = 440;
+    osc.connect(gain).connect(audioCtx.destination);
+    osc.start(audioCtx.currentTime);
+    osc.stop(audioCtx.currentTime + 0.05);
   }catch(e){ /* audio no disponible */ }
 }
 
@@ -452,6 +464,11 @@ function startDraw(){
   tick();
 }
 
+// Menos partículas y menos ráfagas en pantallas chicas / equipos modestos para evitar lag
+const isLite = window.matchMedia('(max-width: 700px)').matches || (navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 4);
+const perf = isLite ? 0.45 : 1;
+const MAX_PARTICLES = isLite ? 220 : 420;
+
 function celebrateWinner(){
   const flash = document.getElementById('flash');
   flash.classList.add('active');
@@ -459,10 +476,10 @@ function celebrateWinner(){
 
   playFanfare();
 
-  spawnConfettiBurst(0.5, 0, 190, 0.32);
-  setTimeout(()=>spawnConfettiBurst(0.04, 6.5, 100, 0.85), 220);
-  setTimeout(()=>spawnConfettiBurst(0.96, -6.5, 100, 0.85), 220);
-  setTimeout(()=>spawnConfettiBurst(0.5, 0, 90, 0.32), 900);
+  spawnConfettiBurst(0.5, 0, Math.round(120*perf), 0.32);
+  setTimeout(()=>spawnConfettiBurst(0.04, 6.5, Math.round(65*perf), 0.85), 220);
+  setTimeout(()=>spawnConfettiBurst(0.96, -6.5, Math.round(65*perf), 0.85), 220);
+  setTimeout(()=>spawnConfettiBurst(0.5, 0, Math.round(45*perf), 0.32), 900);
 
   fireworksShow();
 }
@@ -475,6 +492,12 @@ window.addEventListener('resize', resize);
 
 let particles = [];
 const CONFETTI_COLORS = ['#e11d2e','#ff4757','#e8c27a','#f4f6fb','#1e3a8a','#ffd166'];
+
+function capParticles(){
+  if(particles.length > MAX_PARTICLES){
+    particles.splice(0, particles.length - MAX_PARTICLES);
+  }
+}
 
 function spawnConfettiBurst(originXRatio, biasVX, count, originYRatio){
   for(let i=0;i<count;i++){
@@ -489,14 +512,15 @@ function spawnConfettiBurst(originXRatio, biasVX, count, originYRatio){
       color: CONFETTI_COLORS[Math.floor(Math.random()*CONFETTI_COLORS.length)],
       rot: Math.random()*360,
       vr: (Math.random()-0.5)*10,
-      life: 150 + Math.random()*50
+      life: 130 + Math.random()*40
     });
   }
+  capParticles();
 }
 
 function fireworkBurst(x, y){
   const colors = ['#e11d2e','#ff4757','#e8c27a','#ffd166','#f4f6fb'];
-  const count = 46;
+  const count = Math.round(30*perf);
   for(let i=0;i<count;i++){
     const angle = (Math.PI*2*i)/count + Math.random()*0.25;
     const speed = 2.4 + Math.random()*3.4;
@@ -508,39 +532,41 @@ function fireworkBurst(x, y){
       g: 0.05,
       size: 2.5 + Math.random()*2.5,
       color: colors[Math.floor(Math.random()*colors.length)],
-      life: 55 + Math.random()*20,
-      maxLife: 78
+      life: 48 + Math.random()*16,
+      maxLife: 64
     });
   }
+  capParticles();
 }
 
 function fireworksShow(){
-  const bursts = 5;
+  const bursts = isLite ? 3 : 5;
   for(let i=0;i<bursts;i++){
     setTimeout(()=>{
       const x = canvas.width*(0.15 + Math.random()*0.7);
       const y = canvas.height*(0.15 + Math.random()*0.32);
       fireworkBurst(x,y);
-    }, 300 + i*420);
+    }, 300 + i*480);
   }
 }
 
 function animate(){
   ctx.clearRect(0,0,canvas.width,canvas.height);
-  particles.forEach(p=>{
+  ctx.globalAlpha = 1;
+  for(let i=0;i<particles.length;i++){
+    const p = particles[i];
     p.vy += p.g;
     p.x += p.vx;
     p.y += p.vy;
     p.life--;
 
     if(p.type === 'firework'){
-      ctx.save();
+      // Sin save/restore: mas barato para el navegador cuando hay muchas particulas a la vez
       ctx.globalAlpha = Math.max(p.life / p.maxLife, 0);
       ctx.beginPath();
       ctx.arc(p.x, p.y, p.size, 0, Math.PI*2);
       ctx.fillStyle = p.color;
       ctx.fill();
-      ctx.restore();
     } else {
       p.rot += p.vr;
       ctx.save();
@@ -550,7 +576,8 @@ function animate(){
       ctx.fillRect(-p.size/2,-p.size/2,p.size,p.size);
       ctx.restore();
     }
-  });
+  }
+  ctx.globalAlpha = 1;
   particles = particles.filter(p=>{
     if(p.type === 'firework') return p.life > 0;
     return p.life > 0 && p.y < canvas.height + 50;
